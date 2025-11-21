@@ -3,15 +3,20 @@ import sqlite3
 import pymysql
 import os
 from datetime import datetime
+from dotenv import load_dotenv  # [新增] 导入 dotenv
 
 """
-完全修复版 DatabaseManager：
+完全修复版 DatabaseManager (安全增强版)：
 ✓ 绝对路径，不乱跑
 ✓ SQLite/MySQL 自动兼容
 ✓ 单例模式，避免多重连接
 ✓ 插入失败自动 rollback
 ✓ 稳定关闭连接
+✓ [新增] 环境变量读取，保护密码安全
 """
+
+# 加载 .env 文件中的环境变量
+load_dotenv()
 
 # -------------------------------
 #  固定数据库文件位置 —— 保证永远不会乱跑
@@ -21,13 +26,14 @@ DB_FILE = os.path.join(BASE_DIR, "history_data.db")     # 固定到 core/history
 
 
 # --- 配置区域 ---
-USE_MYSQL = False  # 默认使用 SQLite
+USE_MYSQL = False  # 默认使用 SQLite，如需切换请修改为 True
 
+# [修改] 从环境变量读取配置，第二个参数是默认值
 MYSQL_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "password",
-    "database": "omnidata",
+    "host": os.getenv("DB_HOST", "localhost"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", ""),  # ✅ 安全：不再硬编码密码
+    "database": os.getenv("DB_NAME", "omnidata"),
     "charset": "utf8mb4"
 }
 
@@ -68,6 +74,7 @@ class DatabaseManager:
             self.cursor = self.conn.cursor()
         except Exception as e:
             print(f" !! [DB] 连接失败: {e}")
+            # 可以在这里添加重试逻辑或回退到 SQLite
 
     # -------------------------------
     #  初始化表
@@ -116,7 +123,9 @@ class DatabaseManager:
             self.conn.commit()
         except Exception as e:
             print(f" !! [DB] 插入失败: {e}")
-            self.conn.rollback()
+            # 发生错误时回滚，防止事务卡死
+            if self.conn:
+                self.conn.rollback()
 
     # -------------------------------
     #  统计记录总数
@@ -125,7 +134,8 @@ class DatabaseManager:
         try:
             sql = "SELECT COUNT(*) FROM price_history"
             self.cursor.execute(sql)
-            return self.cursor.fetchone()[0]
+            result = self.cursor.fetchone()
+            return result[0] if result else 0
         except Exception as e:
             print(f"[DB] 查询失败: {e}")
             return 0
@@ -139,8 +149,8 @@ class DatabaseManager:
                 self.conn.commit()
                 self.conn.close()
                 print(" [DB] 已关闭数据库连接")
-        except:
-            pass
+        except Exception as e:
+            print(f" [DB] 关闭连接报错: {e}")
 
 
 # 全局实例

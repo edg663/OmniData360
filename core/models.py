@@ -17,7 +17,7 @@ import statistics
 class Asset:
     category = "General Asset"
 
-    def __init__(self, symbol, initial_price=0.0, window_size=5):
+    def __init__(self, symbol: str, initial_price: float = 0.0, window_size: int = 5) -> None:
         """
         window_size: 移动平均线的窗口大小 (最近 N 次价格)
         """

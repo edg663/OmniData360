@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests  # 导入刚才安装的库
 import random
-
+from typing import Optional # 导入工具
 """
 core/network.py
 ---------------
@@ -22,7 +22,7 @@ COIN_MAPPING = {
 }
 
 
-def fetch_real_price(symbol):
+def fetch_real_price(symbol: str) -> Optional[float]:
     """
     尝试从网络获取实时价格。
     如果失败，为了不让程序崩溃，回退到随机模拟。
