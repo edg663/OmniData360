@@ -33,7 +33,8 @@ OmniData 360 是一个集数据采集、清洗、存储、分析、可视化、W
 
 1.  克隆项目
     ```bash
-    git clone [https://github.com/](https://github.com/)<你的用户名>/OmniData360.git
+    git clone https://github.com/edg663/OmniData360.git
+
     ```
 
 2.  安装依赖
