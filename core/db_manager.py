@@ -3,16 +3,16 @@ import sqlite3
 import pymysql
 import os
 from datetime import datetime
-from dotenv import load_dotenv  # [新增] 导入 dotenv
+from dotenv import load_dotenv
 
 """
-完全修复版 DatabaseManager (安全增强版)：
+完全修复版 DatabaseManager (最终优化版)：
+✓ 数据库位置优化：移至 data/ 目录
 ✓ 绝对路径，不乱跑
 ✓ SQLite/MySQL 自动兼容
 ✓ 单例模式，避免多重连接
 ✓ 插入失败自动 rollback
-✓ 稳定关闭连接
-✓ [新增] 环境变量读取，保护密码安全
+✓ 环境变量读取，保护密码安全
 """
 
 # 加载 .env 文件中的环境变量
@@ -20,15 +20,26 @@ load_dotenv()
 
 # -------------------------------
 #  固定数据库文件位置 —— 保证永远不会乱跑
+#  优化：将 DB 文件放在 data/ 目录下
 # -------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # 当前 core/ 文件夹
-DB_FILE = os.path.join(BASE_DIR, "history_data.db")     # 固定到 core/history_data.db
+# 1. 获取 core/ 目录
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+# 2. 获取项目根目录 (core 的上一级)
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+# 3. 指向 data/ 目录
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+
+# 自动创建 data 目录 (防止报错)
+os.makedirs(DATA_DIR, exist_ok=True)
+
+# 4. 最终数据库路径
+DB_FILE = os.path.join(DATA_DIR, "history_data.db")
 
 
 # --- 配置区域 ---
 USE_MYSQL = False  # 默认使用 SQLite，如需切换请修改为 True
 
-# [修改] 从环境变量读取配置，第二个参数是默认值
+# 从环境变量读取配置，第二个参数是默认值
 MYSQL_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "user": os.getenv("DB_USER", "root"),
